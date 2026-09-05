@@ -22,7 +22,7 @@ export function trimContent(input: string): string {
 		s = s.replace(/<script[\s\S]*?<\/script>/gi, "");
 		s = s.replace(/<style[\s\S]*?<\/style>/gi, "");
 		s = s.replace(/<svg[\s\S]*?<\/svg>/gi, "");
-		s = s.replace(/<!--[\s\S]*?-->/g, "");
+		s = s.replace(/<!--|-->/g, "");
 	} while (s !== prev);
 	s = s.replace(/<[^>]+>/g, " "); // drop remaining tags but keep text
 	s = s.replace(/\s+/g, " ").trim();

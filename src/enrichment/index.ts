@@ -13,20 +13,27 @@ const MAX_INPUT_BYTES = 60_000;
 /**
  * Trim source content to a model-feedable window. Strips script/style/svg and
  * HTML comments, collapses whitespace, and truncates as a last resort.
+ *
+ * The removal loop repeats until stable to prevent bypass where removing one
+ * instance exposes another (e.g. "</scr</script>ipt>" ??? "</script>").
  */
 export function trimContent(input: string): string {
 	let s = input;
-	s = s.replace(/<script[\s\S]*?<\/script>/gi, "");
-	s = s.replace(/<style[\s\S]*?<\/style>/gi, "");
-	s = s.replace(/<svg[\s\S]*?<\/svg>/gi, "");
-	s = s.replace(/<!--[\s\S]*?-->/g, "");
-	s = s.replace(/<[^>]+>/g, " "); // drop remaining tags but keep text
+	let prev: string;
+	do {
+		prev = s;
+		s = s.replace(/<script\b[\s\S]*?<\/script\s*>/gi, "");
+		s = s.replace(/<style\b[\s\S]*?<\/style\s*>/gi, "");
+		s = s.replace(/<svg\b[\s\S]*?<\/svg\s*>/gi, "");
+		s = s.replace(/<!--[\s\S]*?-->/g, "");
+	} while (s !== prev);
+	s = s.replace(/<[^>]+>/g, " ");
 	s = s.replace(/\s+/g, " ").trim();
 	if (s.length > MAX_INPUT_BYTES) s = s.slice(0, MAX_INPUT_BYTES);
 	return s;
 }
 
-const SYSTEM_PROMPT = `You prepare web content to be read by AI agents and assistants. The user pastes the raw text of one page. Return STRICT JSON only — no prose, no Markdown fences.
+const SYSTEM_PROMPT = `You prepare web content to be read by AI agents and assistants. The user pastes the raw text of one page. Return STRICT JSON only ??? no prose, no Markdown fences.
 
 Schema:
 {
